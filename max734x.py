@@ -153,10 +153,10 @@ _CONFIGURATION_BUS_TIMEOUT_DISABLE = const(0b00000001)
 
 # Sounder status
 _CONFIGURATION_SOUNDER_STATUS_MASK = const(0b00000110)
-_CONFIGURATION_SOUNDER_OFF         = const(0b00000000)
-_CONFIGURATION_SOUNDER_SERIAL      = const(0b00000010)
-_CONFIGURATION_SOUNDER_DEBOUNCE    = const(0b00000100)
-_CONFIGURATION_SOUNDER_ALERT       = const(0b00000110)
+CONFIGURATION_SOUNDER_OFF          = const(0b00000000)
+CONFIGURATION_SOUNDER_SERIAL       = const(0b00000010)
+CONFIGURATION_SOUNDER_DEBOUNCE     = const(0b00000100)
+CONFIGURATION_SOUNDER_ALERT        = const(0b00000110)
 
 # Alert IRQ event
 _CONFIGURATION_ALERT_IRQ_EVENT_MASK                 = const(0b00001000)
@@ -236,6 +236,98 @@ _SOUNDER_DURATION_1000MS     = const(0b11100000)
 _SOUNDER_DURATION_DEFAULT    = _SOUNDER_DURATION_CONTINUOUS
 
 
+class MAX734XConfiguration:
+    """
+    Configuration register.
+
+    :param bool bus_timeout_enabled: Serial interface bus timeout.
+    :param int active_sounder_output: Active sounder output is set by ...
+    :param bool alert_irq_enabled: Alert input IRQ enable.
+    :param bool alert_irq_immediately: Alert input IRQ is asserted immediately.
+    :param bool alert_sound_enabled: Alert sound enable.
+    :param bool key_sound_enabled: Key sound enable.
+    :param bool shutdown: Shutdown mode.
+    """
+
+    def __init__(
+        self,
+        bus_timeout_enabled: bool = True,
+        active_sounder_output: int = CONFIGURATION_SOUNDER_OFF,
+        alert_irq_enabled: bool = False,
+        alert_irq_immediately: bool = False,
+        alert_sound_enabled: bool = False,
+        key_sound_enabled: bool = False,
+        shutdown: bool = False,
+    ) -> None:
+        self.bus_timeout_enabled = bus_timeout_enabled
+        self.active_sounder_output = active_sounder_output
+        self.alert_irq_enabled = alert_irq_enabled
+        self.alert_irq_immediately = alert_irq_immediately
+        self.alert_sound_enabled = alert_sound_enabled
+        self.key_sound_enabled = key_sound_enabled
+        self.shutdown = shutdown
+
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the configuration object.
+        :return: String representation of the configuration object.
+        """
+        if self.active_sounder_output == CONFIGURATION_SOUNDER_OFF:
+            active_sounder_output = "off"
+        elif self.active_sounder_output == CONFIGURATION_SOUNDER_SERIAL:
+            active_sounder_output = "serial interface"
+        elif self.active_sounder_output == CONFIGURATION_SOUNDER_DEBOUNCE:
+            active_sounder_output = "key press"
+        elif self.active_sounder_output == CONFIGURATION_SOUNDER_ALERT:
+            active_sounder_output = "alert event"
+        else:
+            active_sounder_output = "unknown"
+        return (
+            f"<MAX734XConfiguration bus_timeout_enabled={self.bus_timeout_enabled} "
+            f"active_sounder_output={active_sounder_output} "
+            f"alert_irq_enabled={self.alert_irq_enabled} "
+            f"alert_irq_immediately={self.alert_irq_immediately} "
+            f"alert_sound_enabled={self.alert_sound_enabled} "
+            f"key_sound_enabled={self.key_sound_enabled} "
+            f"shutdown={self.shutdown}>"
+        )
+
+
+    @staticmethod
+    def from_register(value: int):
+        """
+        Create a new MAX734X configuration object from the register value.
+
+        :param int value: The value of the register.
+        :return: The new MAX734X configuration object.
+        """
+        return MAX734XConfiguration(
+            bus_timeout_enabled=bool(value & _CONFIGURATION_BUS_TIMEOUT_MASK),
+            active_sounder_output=value & _CONFIGURATION_SOUNDER_STATUS_MASK,
+            alert_irq_enabled=bool(value & _CONFIGURATION_ALERT_IRQ_ENABLE_MASK),
+            alert_irq_immediately=bool(value & _CONFIGURATION_ALERT_IRQ_EVENT_MASK),
+            alert_sound_enabled=bool(value & _CONFIGURATION_ALERT_SOUND_ENABLE_MASK),
+            key_sound_enabled=bool(value & _CONFIGURATION_KEY_SOUND_ENABLE_MASK),
+            shutdown=bool(value & _CONFIGURATION_MODE_MASK),
+        )
+
+
+    def to_register(self) -> int:
+        """
+        Convert the configuration object to the register value.
+
+        :return: Register interpretation of the configuration object.
+        """
+        return (
+            (self.bus_timeout_enabled << 0) |
+            self.active_sounder_output |
+            (self.alert_irq_enabled << 3) |
+            (self.alert_irq_immediately << 4) |
+            (self.alert_sound_enabled << 5) |
+            (self.key_sound_enabled << 6) |
+            (self.shutdown << 7)
+        )
 
 
 class KeysFiFo:
@@ -281,9 +373,9 @@ class KeysFiFo:
         """
         return KeysFiFo(
             overflow=bool(value & _KEYS_FIFO_OVERFLOW_MASK),
-            last=bool(value & _KEYS_FIFO_LAST_MASK),
-            row=(value & _KEYS_FIFO_KEY_MASK) >> 3,
-            column=value & _KEYS_FIFO_KEY_MASK,
+            last=not bool(value & _KEYS_FIFO_LAST_MASK),
+            column=(value & _KEYS_FIFO_KEY_MASK) >> 3,
+            row=value & _KEYS_FIFO_KEY_MASK & 0x07,
         )
 
 
@@ -308,6 +400,7 @@ class MAX734X:
         """
         Read the keys FIFO register.
 
+        :return KeysFiFo: The keys FIFO register.
         """
         buffer: bytearray = bytearray(1)
         buffer[0] = _REG_KEYS
@@ -319,3 +412,34 @@ class MAX734X:
                 out_end=1,
             )
         return KeysFiFo.from_register(buffer[0])
+
+
+    def read_configuration(self) -> MAX734XConfiguration:
+        """
+        Read the configuration register.
+
+        :return MAX734XConfiguration: The configuration object.
+        """
+        buffer: bytearray = bytearray(1)
+        buffer[0] = _REG_CONFIGURATION
+        with self._i2c as i2c:
+            i2c.write_then_readinto(
+                in_buffer=buffer,
+                in_end=1,
+                out_buffer=buffer,
+                out_end=1,
+            )
+        return MAX734XConfiguration.from_register(buffer[0])
+
+
+    def write_configuration(self, configuration: MAX734XConfiguration) -> None:
+        """
+        Write the configuration register.
+
+        :param MAX734XConfiguration configuration: The configuration object.
+        """
+        buffer: bytearray = bytearray(2)
+        buffer[0] = _REG_CONFIGURATION
+        buffer[1] = configuration.to_register()
+        with self._i2c as i2c:
+            i2c.write(buffer)
