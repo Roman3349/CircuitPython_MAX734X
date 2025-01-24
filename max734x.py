@@ -33,7 +33,6 @@ from micropython import const
 from adafruit_bus_device.i2c_device import I2CDevice
 
 try:
-    from digitalio import DigitalInOut
     from busio import I2C
 except ImportError:
     pass
@@ -81,15 +80,15 @@ _KEYS_FIFO_KEY_MASK = const(0b00111111)
 #
 
 # Debounce port enable
-_DEBOUNCE_ENABLE_MASK       = const(0b11100000)
-_DEBOUNCE_DISABLE           = const(0b00000000)
-_DEBOUNCE_ENABLE_PORT7      = const(0b00100000)
-_DEBOUNCE_ENABLE_PORT67     = const(0b01000000)
-_DEBOUNCE_ENABLE_PORT567    = const(0b01100000)
-_DEBOUNCE_ENABLE_PORT4567   = const(0b10000000)
-_DEBOUNCE_ENABLE_PORT34567  = const(0b10100000)
-_DEBOUNCE_ENABLE_PORT234567 = const(0b11100000)
-_DEBOUNCE_ENABLE_DEFAULT    = _DEBOUNCE_ENABLE_PORT234567
+_DEBOUNCE_OUTPUT_ENABLE_MASK       = const(0b11100000)
+_DEBOUNCE_OUTPUT_DISABLE           = const(0b00000000)
+_DEBOUNCE_OUTPUT_ENABLE_PORT7      = const(0b00100000)
+_DEBOUNCE_OUTPUT_ENABLE_PORT67     = const(0b01000000)
+_DEBOUNCE_OUTPUT_ENABLE_PORT567    = const(0b01100000)
+_DEBOUNCE_OUTPUT_ENABLE_PORT4567   = const(0b10000000)
+_DEBOUNCE_OUTPUT_ENABLE_PORT34567  = const(0b10100000)
+_DEBOUNCE_OUTPUT_ENABLE_PORT234567 = const(0b11100000)
+_DEBOUNCE_OUTPUT_ENABLE_DEFAULT    = _DEBOUNCE_OUTPUT_ENABLE_PORT234567
 
 # Debounce time in milliseconds
 _DEBOUNCE_TIME_MASK = const(0b00011111)
@@ -309,7 +308,7 @@ class MAX734XConfiguration:
             alert_irq_immediately=bool(value & _CONFIGURATION_ALERT_IRQ_EVENT_MASK),
             alert_sound_enabled=bool(value & _CONFIGURATION_ALERT_SOUND_ENABLE_MASK),
             key_sound_enabled=bool(value & _CONFIGURATION_KEY_SOUND_ENABLE_MASK),
-            shutdown=bool(value & _CONFIGURATION_MODE_MASK),
+            shutdown=not bool(value & _CONFIGURATION_MODE_MASK),
         )
 
 
@@ -326,7 +325,81 @@ class MAX734XConfiguration:
             (self.alert_irq_immediately << 4) |
             (self.alert_sound_enabled << 5) |
             (self.key_sound_enabled << 6) |
-            (self.shutdown << 7)
+            (not self.shutdown << 7)
+        )
+
+
+class DebounceConfiguration:
+    """
+    Debounce register.
+
+    :param int time_ms: Debounce time in milliseconds (from 9 to 40).
+    :param int outputs: Number of GPO to enable (from 0 to 6).
+    """
+
+    def __init__(
+        self,
+        time_ms: int = 40,
+        outputs: int = 6,
+    ) -> None:
+        if time_ms < 9 or time_ms > 40:
+            raise ValueError("Debounce time must be between 9 and 40 milliseconds.")
+        if outputs < 0 or outputs > 6:
+            raise ValueError("Number of GPO to enable must be between 0 and 6.")
+        self.time_ms = time_ms
+        self.outputs = outputs
+
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the object.
+
+        :return: String representation of the object.
+        """
+        if self.outputs == 0:
+            outputs = "disabled"
+        elif self.outputs == 1:
+            outputs = "GPO7"
+        elif self.outputs == 2:
+            outputs = "GPO6+GPO7"
+        elif self.outputs == 3:
+            outputs = "GPO5+GPO6+GPO7"
+        elif self.outputs == 4:
+            outputs = "GPO4+GPO5+GPO6+GPO7"
+        elif self.outputs == 5:
+            outputs = "GPO3+GPO4+GPO5+GPO6+GPO7"
+        elif self.outputs == 6:
+            outputs = "GPO2+GPO3+GPO4+GPO5+GPO6+GPO7"
+        else:
+            outputs = "unknown"
+        return (
+            f"<DebounceConfiguration time_ms={self.time_ms} outputs={outputs}>"
+        )
+
+
+    @staticmethod
+    def from_register(value: int):
+        """
+        Create a new DebounceConfiguration object from the register value.
+
+        :param int value: The value of the register.
+        :return: The new DebounceConfiguration object.
+        """
+        return DebounceConfiguration(
+            time_ms=(value & _DEBOUNCE_TIME_MASK) + 9,
+            outputs=(value & _DEBOUNCE_OUTPUT_ENABLE_MASK) >> 5,
+        )
+
+
+    def to_register(self) -> int:
+        """
+        Convert the configuration object to the register value.
+
+        :return: Register interpretation of the configuration object.
+        """
+        return (
+            (self.outputs << 5) |
+            ((self.time_ms - 9) & _DEBOUNCE_TIME_MASK)
         )
 
 
@@ -412,6 +485,36 @@ class MAX734X:
                 out_end=1,
             )
         return KeysFiFo.from_register(buffer[0])
+
+    def read_debounce(self) -> DebounceConfiguration:
+        """
+        Read the debounce register.
+
+        :return DebounceConfiguration: The debounce configuration object.
+        """
+        buffer: bytearray = bytearray(1)
+        buffer[0] = _REG_DEBOUNCE
+        with self._i2c as i2c:
+            i2c.write_then_readinto(
+                in_buffer=buffer,
+                in_end=1,
+                out_buffer=buffer,
+                out_end=1,
+            )
+        return DebounceConfiguration.from_register(buffer[0])
+
+
+    def write_debounce(self, debounce: DebounceConfiguration) -> None:
+        """
+        Write the debounce register.
+
+        :param DebounceConfiguration debounce: The debounce configuration object.
+        """
+        buffer: bytearray = bytearray(2)
+        buffer[0] = _REG_DEBOUNCE
+        buffer[1] = debounce.to_register()
+        with self._i2c as i2c:
+            i2c.write(buffer)
 
 
     def read_configuration(self) -> MAX734XConfiguration:
