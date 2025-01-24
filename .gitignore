@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2025 Roman Ondráček
+#
+# SPDX-License-Identifier: MIT
+
+# IDEs
+.idea/
+
+# Virtual environments
+venv/
+.venv/

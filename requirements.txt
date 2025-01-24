@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Roman Ondráček
+#
+# SPDX-License-Identifier: MIT
+
+Adafruit-Blinka
+adafruit-circuitpython-busdevice
+adafruit-circuitpython-register

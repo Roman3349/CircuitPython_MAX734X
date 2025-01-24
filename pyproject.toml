@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2025 Roman Ondráček
+#
+# SPDX-License-Identifier: MIT
+
+[build-system]
+requires = [
+    "setuptools",
+    "wheel",
+    "setuptools-scm",
+]
+
+[project]
+name = "circuitpython-max734x"
+description = "CircuitPython driver for MAX7347/MAX7348/MAX7349 keybord and sounder controllers"
+version = "0.0.0+auto.0"
+readme = "README.md"
+authors = [
+    { name = "Roman Ondráček", email = "mail@romanondracek.cz" }
+]
+urls = {Homepage = "https://github.com/adafruit/Adafruit_CircuitPython_24LC32.git"}
+keywords = [
+    "blinka",
+    "circuitpython",
+    "MAX7347",
+    "MAX7348",
+    "MAX7349"
+]
+license = {text = "MIT"}
+classifiers = [
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Embedded Systems",
+    "Topic :: System :: Hardware",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+dynamic = ["dependencies", "optional-dependencies"]
+
+[tool.setuptools]
+py-modules = ["max734x"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+optional-dependencies = {optional = {file = ["optional_requirements.txt"]}}
