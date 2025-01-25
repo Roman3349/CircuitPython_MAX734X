@@ -24,13 +24,11 @@ pip3 install circuitpython-max734x
 
 ## Usage Example
 
-
 ```python
-import busio
+import board
 import max734x
 
-from board import *
-i2c = board.I2C()   # uses board.SCL and board.SDA
+i2c = board.I2C()  # uses board.SCL and board.SDA
 
-controller = max734x.MAX734X(i2c)
+kb_controller = max734x.MAX734X(i2c)
 ```

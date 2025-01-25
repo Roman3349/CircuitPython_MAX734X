@@ -235,7 +235,7 @@ _SOUNDER_DURATION_1000MS     = const(0b11100000)
 _SOUNDER_DURATION_DEFAULT    = _SOUNDER_DURATION_CONTINUOUS
 
 
-class MAX734XConfiguration:
+class Configuration:
     """
     Configuration register.
 
@@ -301,7 +301,7 @@ class MAX734XConfiguration:
         :param int value: The value of the register.
         :return: The new MAX734X configuration object.
         """
-        return MAX734XConfiguration(
+        return Configuration(
             bus_timeout_enabled=bool(value & _CONFIGURATION_BUS_TIMEOUT_MASK),
             active_sounder_output=value & _CONFIGURATION_SOUNDER_STATUS_MASK,
             alert_irq_enabled=bool(value & _CONFIGURATION_ALERT_IRQ_ENABLE_MASK),
@@ -325,11 +325,11 @@ class MAX734XConfiguration:
             (self.alert_irq_immediately << 4) |
             (self.alert_sound_enabled << 5) |
             (self.key_sound_enabled << 6) |
-            (not self.shutdown << 7)
+            ((not self.shutdown) << 7)
         )
 
 
-class DebounceConfiguration:
+class Debounce:
     """
     Debounce register.
 
@@ -385,7 +385,7 @@ class DebounceConfiguration:
         :param int value: The value of the register.
         :return: The new DebounceConfiguration object.
         """
-        return DebounceConfiguration(
+        return Debounce(
             time_ms=(value & _DEBOUNCE_TIME_MASK) + 9,
             outputs=(value & _DEBOUNCE_OUTPUT_ENABLE_MASK) >> 5,
         )
@@ -424,6 +424,7 @@ class KeysFiFo:
         self.last = last
         self.row = row
         self.column = column
+        self.key = (row << 3) + column
 
 
     def __repr__(self) -> str:
@@ -433,8 +434,9 @@ class KeysFiFo:
         """
         return (
             f"<KeysFiFo overflow={self.overflow} last={self.last} "
-            f"row={self.row} column={self.column}>"
+            f"key={self.key} row={self.row} column={self.column}>"
         )
+
 
     @staticmethod
     def from_register(value: int):
@@ -486,7 +488,7 @@ class MAX734X:
             )
         return KeysFiFo.from_register(buffer[0])
 
-    def read_debounce(self) -> DebounceConfiguration:
+    def read_debounce(self) -> Debounce:
         """
         Read the debounce register.
 
@@ -501,14 +503,14 @@ class MAX734X:
                 out_buffer=buffer,
                 out_end=1,
             )
-        return DebounceConfiguration.from_register(buffer[0])
+        return Debounce.from_register(buffer[0])
 
 
-    def write_debounce(self, debounce: DebounceConfiguration) -> None:
+    def write_debounce(self, debounce: Debounce) -> None:
         """
         Write the debounce register.
 
-        :param DebounceConfiguration debounce: The debounce configuration object.
+        :param Debounce debounce: The debounce configuration object.
         """
         buffer: bytearray = bytearray(2)
         buffer[0] = _REG_DEBOUNCE
@@ -517,7 +519,7 @@ class MAX734X:
             i2c.write(buffer)
 
 
-    def read_configuration(self) -> MAX734XConfiguration:
+    def read_configuration(self) -> Configuration:
         """
         Read the configuration register.
 
@@ -532,14 +534,14 @@ class MAX734X:
                 out_buffer=buffer,
                 out_end=1,
             )
-        return MAX734XConfiguration.from_register(buffer[0])
+        return Configuration.from_register(buffer[0])
 
 
-    def write_configuration(self, configuration: MAX734XConfiguration) -> None:
+    def write_configuration(self, configuration: Configuration) -> None:
         """
         Write the configuration register.
 
-        :param MAX734XConfiguration configuration: The configuration object.
+        :param Configuration configuration: The configuration object.
         """
         buffer: bytearray = bytearray(2)
         buffer[0] = _REG_CONFIGURATION
