@@ -12,7 +12,6 @@ requires = [
 [project]
 name = "circuitpython-max734x"
 description = "CircuitPython driver for MAX7347/MAX7348/MAX7349 keybord and sounder controllers"
-version = "0.0.0+auto.0"
 readme = "README.md"
 authors = [
     { name = "Roman Ondráček", email = "mail@romanondracek.cz" }
@@ -34,7 +33,11 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
 ]
-dynamic = ["dependencies", "optional-dependencies"]
+dynamic = [
+    "dependencies",
+    "optional-dependencies",
+    "version",
+]
 
 [tool.ruff]
 line-length = 120
@@ -49,3 +52,8 @@ py-modules = ["max734x"]
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 optional-dependencies = {optional = {file = ["optional_requirements.txt"]}}
+
+[tool.setuptools_scm]
+version_scheme= "no-guess-dev"
+local_scheme = "no-local-version"
+fallback_version = "0.0.0"

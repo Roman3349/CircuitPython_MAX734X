@@ -1,10 +1,70 @@
-name: Publish Python 🐍 distribution 📦 to PyPI
+name: Publish a new release
 
 on:
   release:
     types: [created]
+  workflow_dispatch:
 
 jobs:
+  github-publish:
+    name: Publish release artifacts to GitHub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Translate Repo Name For Build Tools filename_prefix
+        id: repo-name
+        run: |
+          echo repo-name=$(
+          echo ${{ github.repository }} |
+          awk -F '\/' '{ print tolower($2) }' |
+          tr '_' '-'
+          ) >> $GITHUB_OUTPUT
+
+      - name: Translate Repo Name For Build Tools package_prefix
+        id: pkg-name
+        run: |
+          echo pkg-name=$(
+          echo ${{ github.repository }} |
+          awk -F '\/' '{ print tolower($2) }'
+          ) >> $GITHUB_OUTPUT
+
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Checkout Current Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout tools repo
+        uses: actions/checkout@v4
+        with:
+          repository: adafruit/actions-ci-circuitpython-libs
+          path: actions-ci
+
+      - name: Install deps
+        run: |
+          source actions-ci/install.sh
+
+      - name: Build assets
+        run: circuitpython-build-bundles --filename_prefix ${{ steps.repo-name.outputs.repo-name }} --package_folder_prefix ${{ steps.pkg-name.outputs.pkg-name }} --library_location .
+
+      - name: Archive bundles
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundles
+          path: ${{ github.workspace }}/bundles/
+
+      - name: Upload Release Assets
+        if: github.event_name == 'release'
+        uses: shogo82148/actions-upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: "bundles/*"
+
+
   pypi-publish:
     name: Publish release to PyPI
     runs-on: ubuntu-latest
@@ -15,18 +75,33 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
+
       - name: Install pypa/build
-        run: python3 -m pip install --user build
+        run: python3 -m pip install --user build pip twine
+
       - name: Build a binary wheel and a source tarball
         run: python3 -m build
+
+      - name: Check distributions
+        run: twine check dist/*
+
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
         with:
           name: python-package-distributions
           path: dist/
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Publish package (to TestPyPI)
+        if: github.event_name == 'workflow_dispatch' && github.repository == 'Roman3349/CircuitPython_MAX734X'
+        uses: pypa/gh-action-pypi-publish@v1.12.4
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+      - name: Publish package (to PyPI)
+        if: github.event_name != 'workflow_dispatch' && github.repository == 'Roman3349/CircuitPython_MAX734X'
+        uses: pypa/gh-action-pypi-publish@v1.12.4
