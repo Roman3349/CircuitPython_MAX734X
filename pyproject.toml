@@ -36,6 +36,13 @@ classifiers = [
 ]
 dynamic = ["dependencies", "optional-dependencies"]
 
+[tool.ruff]
+line-length = 120
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
 [tool.setuptools]
 py-modules = ["max734x"]
 

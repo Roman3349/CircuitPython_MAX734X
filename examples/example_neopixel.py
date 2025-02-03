@@ -35,6 +35,8 @@ def init_keyboard(
     controller = max734x.MAX734X(i2c_bus=i2c_bus)
     # Disable all GPO to enable 8x8 button matrix, debounce interval 40 ms
     controller.write_debounce(max734x.Debounce(time_ms=40, outputs=0))
+    # Enable key-scan interrupts
+    controller.write_interrupt(max734x.Interrupt(assent_on_debounce_cycles=1))
     # Enable the keyboard controller
     controller.write_configuration(max734x.Configuration(shutdown=False))
     return controller, int_input

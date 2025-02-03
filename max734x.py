@@ -29,8 +29,8 @@ Implementation Notes
   https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
 """
 
-from micropython import const
 from adafruit_bus_device.i2c_device import I2CDevice
+from micropython import const
 
 try:
     from busio import I2C
@@ -138,8 +138,10 @@ _AUTOREPEAT_DELAY_128  = const(0b00001111)
 #
 # Interrupt register definitions
 #
-
-# TODO: Implement interrupt register definitions
+_INTERRUPT_KEY_SCAN_INT_FREQ_MASK = const(0b00011111)
+_INTERRUPT_KEY_SCAN_EVENT_MASK    = const(0b00100000)
+_INTERRUPT_ALERT_EVENT_MASK       = const(0b01000000)
+_INTERRUPT_INT_STATUS_MASK        = const(0b10000000)
 
 #
 # Configuration register definitions
@@ -266,7 +268,6 @@ class Configuration:
         self.key_sound_enabled = key_sound_enabled
         self.shutdown = shutdown
 
-
     def __repr__(self) -> str:
         """
         Return a string representation of the configuration object.
@@ -292,7 +293,6 @@ class Configuration:
             f"shutdown={self.shutdown}>"
         )
 
-
     @staticmethod
     def from_register(value: int):
         """
@@ -310,7 +310,6 @@ class Configuration:
             key_sound_enabled=bool(value & _CONFIGURATION_KEY_SOUND_ENABLE_MASK),
             shutdown=not bool(value & _CONFIGURATION_MODE_MASK),
         )
-
 
     def to_register(self) -> int:
         """
@@ -349,7 +348,6 @@ class Debounce:
         self.time_ms = time_ms
         self.outputs = outputs
 
-
     def __repr__(self) -> str:
         """
         Return a string representation of the object.
@@ -373,23 +371,21 @@ class Debounce:
         else:
             outputs = "unknown"
         return (
-            f"<DebounceConfiguration time_ms={self.time_ms} outputs={outputs}>"
+            f"<Debounce time_ms={self.time_ms} outputs={outputs}>"
         )
-
 
     @staticmethod
     def from_register(value: int):
         """
-        Create a new DebounceConfiguration object from the register value.
+        Create a new debounce configuration object from the register value.
 
         :param int value: The value of the register.
-        :return: The new DebounceConfiguration object.
+        :return: The new debounce configuration object.
         """
         return Debounce(
             time_ms=(value & _DEBOUNCE_TIME_MASK) + 9,
             outputs=(value & _DEBOUNCE_OUTPUT_ENABLE_MASK) >> 5,
         )
-
 
     def to_register(self) -> int:
         """
@@ -400,6 +396,70 @@ class Debounce:
         return (
             (self.outputs << 5) |
             ((self.time_ms - 9) & _DEBOUNCE_TIME_MASK)
+        )
+
+
+class Interrupt:
+    """
+    Interrupt register.
+
+    :param int assent_on_debounce_cycles: Key-scan INT is asserted at
+    the end of every N debounce cycles, if new key(s) is debounced
+    :param bool asserted_by_key_scan: Key-scan event asserted the INT
+    :param bool asserted_by_alert: Alert event asserted the INT
+    :param bool is_asserted: INT status
+    """
+
+    def __init__(
+        self,
+        assent_on_debounce_cycles: int = 0,
+        asserted_by_key_scan: bool = False,
+        asserted_by_alert: bool = False,
+        is_asserted: bool = False,
+    ):
+        if assent_on_debounce_cycles < 0 or assent_on_debounce_cycles > 31:
+            raise ValueError("Number of debounce cycles must be between 0 and 31.")
+        self.assent_on_debounce_cycles = assent_on_debounce_cycles
+        self.asserted_by_key_scan = asserted_by_key_scan
+        self.asserted_by_alert = asserted_by_alert
+        self.is_asserted = is_asserted
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the object.
+
+        :return: String representation of the object.
+        """
+        return (
+            f"<Interrupt assent_on_debounce_cycles={self.assent_on_debounce_cycles}"
+            f" asserted_by_key_scan={self.asserted_by_key_scan}"
+            f" asserted_by_alert={self.asserted_by_alert}"
+            f" is_asserted={self.is_asserted}>"
+        )
+
+    @staticmethod
+    def from_register(value: int):
+        """
+        Create a new interrupt object from the register value.
+
+        :param int value: The value of the register.
+        :return: The new interrupt object.
+        """
+        return Interrupt(
+            assent_on_debounce_cycles=value & _INTERRUPT_KEY_SCAN_INT_FREQ_MASK,
+            asserted_by_key_scan=value & _INTERRUPT_KEY_SCAN_EVENT_MASK,
+            asserted_by_alert=value & _INTERRUPT_ALERT_EVENT_MASK,
+            is_asserted=value & _INTERRUPT_INT_STATUS_MASK,
+        )
+
+    def to_register(self) -> int:
+        """
+        Convert the interrupt configuration object to the register value.
+
+        :return: Register interpretation of the interrupt configuration object.
+        """
+        return (
+            self.assent_on_debounce_cycles & _INTERRUPT_KEY_SCAN_INT_FREQ_MASK
         )
 
 
@@ -426,7 +486,6 @@ class KeysFiFo:
         self.column = column
         self.key = (row << 3) + column
 
-
     def __repr__(self) -> str:
         """
         Return a string representation of the object.
@@ -436,7 +495,6 @@ class KeysFiFo:
             f"<KeysFiFo overflow={self.overflow} last={self.last} "
             f"key={self.key} row={self.row} column={self.column}>"
         )
-
 
     @staticmethod
     def from_register(value: int):
@@ -469,7 +527,6 @@ class MAX734X:
         address: int = ADDRESS_GND,
     ) -> None:
         self._i2c = I2CDevice(i2c_bus, address)
-
 
     def read_keys(self) -> KeysFiFo:
         """
@@ -505,7 +562,6 @@ class MAX734X:
             )
         return Debounce.from_register(buffer[0])
 
-
     def write_debounce(self, debounce: Debounce) -> None:
         """
         Write the debounce register.
@@ -517,7 +573,6 @@ class MAX734X:
         buffer[1] = debounce.to_register()
         with self._i2c as i2c:
             i2c.write(buffer)
-
 
     def read_configuration(self) -> Configuration:
         """
@@ -536,7 +591,6 @@ class MAX734X:
             )
         return Configuration.from_register(buffer[0])
 
-
     def write_configuration(self, configuration: Configuration) -> None:
         """
         Write the configuration register.
@@ -546,5 +600,34 @@ class MAX734X:
         buffer: bytearray = bytearray(2)
         buffer[0] = _REG_CONFIGURATION
         buffer[1] = configuration.to_register()
+        with self._i2c as i2c:
+            i2c.write(buffer)
+
+    def read_interrupt(self) -> Interrupt:
+        """
+        Read the interrupt register.
+
+        :return Interrupt: The interrupt object.
+        """
+        buffer: bytearray = bytearray(1)
+        buffer[0] = _REG_INTERRUPT
+        with self._i2c as i2c:
+            i2c.write_then_readinto(
+                in_buffer=buffer,
+                in_end=1,
+                out_buffer=buffer,
+                out_end=1,
+            )
+        return Interrupt.from_register(buffer[0])
+
+    def write_interrupt(self, interrupt: Interrupt) -> None:
+        """
+        Write the interrupt register.
+
+        :param Interrupt interrupt: The interrupt object.
+        """
+        buffer: bytearray = bytearray(2)
+        buffer[0] = _REG_INTERRUPT
+        buffer[1] = interrupt.to_register()
         with self._i2c as i2c:
             i2c.write(buffer)
