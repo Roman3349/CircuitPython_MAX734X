@@ -11,3 +11,6 @@ insert_final_newline = true
 charset = utf-8
 indent_size = 4
 indent_style = space
+
+[.github/workflows/*.yml]
+indent_size = 2
