@@ -62,13 +62,13 @@ def clear_neopixel(pixel: neopixel.NeoPixel) -> None:
 
 
 def main() -> None:
-    print('Initializing hardware...')
+    print("Initializing hardware...")
     i2c = board.I2C()
     kb_controller, kb_int = init_keyboard(i2c_bus=i2c, int_pin=board.D5)
     pixel = init_neopixel(pin=board.D13)
-    print('Hardware initialized.')
-    print('Press Ctrl+C to exit.')
-    print('Press a button...')
+    print("Hardware initialized.")
+    print("Press Ctrl+C to exit.")
+    print("Press a button...")
     try:
         led: Optional[int] = None
         while True:

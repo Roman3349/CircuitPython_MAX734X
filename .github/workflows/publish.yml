@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2019 Brendan Doherty
+#
+# SPDX-License-Identifier: MIT
+
 name: Publish a new release
 
 on:
