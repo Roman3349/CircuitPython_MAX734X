@@ -70,11 +70,18 @@ def main() -> None:
     print("Press Ctrl+C to exit.")
     print("Press a button...")
     try:
+        # Read all pending pressed keys
+        while True:
+            keys = kb_controller.read_keys()
+            if keys.last and keys.key == 0:
+                break
         led: Optional[int] = None
         while True:
             if kb_int.value:
                 continue
             keys = kb_controller.read_keys()
+            if not keys.last:
+                continue
             if led is not None:
                 pixel[led] = (0, 0, 0)
             led = (keys.row * 8) + keys.column

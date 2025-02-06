@@ -285,12 +285,12 @@ class Configuration:
             active_sounder_output = "unknown"
         return (
             f"<MAX734XConfiguration bus_timeout_enabled={self.bus_timeout_enabled} "
-            f"active_sounder_output={active_sounder_output} "
-            f"alert_irq_enabled={self.alert_irq_enabled} "
-            f"alert_irq_immediately={self.alert_irq_immediately} "
-            f"alert_sound_enabled={self.alert_sound_enabled} "
-            f"key_sound_enabled={self.key_sound_enabled} "
-            f"shutdown={self.shutdown}>"
+            + f"active_sounder_output={active_sounder_output} "
+            + f"alert_irq_enabled={self.alert_irq_enabled} "
+            + f"alert_irq_immediately={self.alert_irq_immediately} "
+            + f"alert_sound_enabled={self.alert_sound_enabled} "
+            + f"key_sound_enabled={self.key_sound_enabled} "
+            + f"shutdown={self.shutdown}>"
         )
 
     @staticmethod
@@ -427,9 +427,9 @@ class Interrupt:
         """
         return (
             f"<Interrupt assent_on_debounce_cycles={self.assent_on_debounce_cycles}"
-            f" asserted_by_key_scan={self.asserted_by_key_scan}"
-            f" asserted_by_alert={self.asserted_by_alert}"
-            f" is_asserted={self.is_asserted}>"
+            + f" asserted_by_key_scan={self.asserted_by_key_scan}"
+            + f" asserted_by_alert={self.asserted_by_alert}"
+            + f" is_asserted={self.is_asserted}>"
         )
 
     @staticmethod
@@ -486,7 +486,7 @@ class KeysFiFo:
         """
         return (
             f"<KeysFiFo overflow={self.overflow} last={self.last} "
-            f"key={self.key} row={self.row} column={self.column}>"
+            + f"key={self.key} row={self.row} column={self.column}>"
         )
 
     @staticmethod
