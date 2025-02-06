@@ -505,7 +505,7 @@ class KeysFiFo:
 class Sounder:
     """
     Sounder register.
-    
+
     :param bool buffer: Sound buffering.
     :param int frequency: Sound frequency.
     :param int duration: Sound duration.
@@ -517,14 +517,16 @@ class Sounder:
         frequency: int = SOUND_OUTPUT_FREQUENCY_DEFAULT,
         duration: int = SOUND_DURATION_DEFAULT,
     ) -> None:
-        if frequency < SOUNDER_OUTPUT_ACTIVE_LOW or frequency > SOUNDER_OUTPUT_FREQUENCY_E7:
+        if (
+            frequency < SOUNDER_OUTPUT_ACTIVE_LOW
+            or frequency > SOUNDER_OUTPUT_FREQUENCY_E7
+        ):
             raise ValueError("Output frequency must be between 0 and 14.")
         if duration < SOUND_DURATION_CONTINUOUS or duration > SOUND_DURATION_1000MS:
             raise ValueError("Duration must be between 0 and 7.")
         self.buffer = buffer
         self.frequency = frequency
         self.duration = duration
-
 
     def __repr__(self) -> str:
         """
@@ -611,14 +613,10 @@ class MAX734X:
 
         :return KeysFiFo: The keys FIFO register.
         """
-        buffer: bytearray = bytearray(1)
-        buffer[0] = _REG_KEYS
+        buffer: bytearray = bytearray([_REG_KEYS])
         with self._i2c_keyboard as i2c:
             i2c.write_then_readinto(
-                in_buffer=buffer,
-                in_end=1,
-                out_buffer=buffer,
-                out_end=1,
+                in_buffer=buffer, in_end=1, out_buffer=buffer, out_end=1
             )
         return KeysFiFo.from_register(buffer[0])
 
@@ -628,14 +626,10 @@ class MAX734X:
 
         :return DebounceConfiguration: The debounce configuration object.
         """
-        buffer: bytearray = bytearray(1)
-        buffer[0] = _REG_DEBOUNCE
+        buffer: bytearray = bytearray([_REG_DEBOUNCE])
         with self._i2c_keyboard as i2c:
             i2c.write_then_readinto(
-                in_buffer=buffer,
-                in_end=1,
-                out_buffer=buffer,
-                out_end=1,
+                in_buffer=buffer, in_end=1, out_buffer=buffer, out_end=1
             )
         return Debounce.from_register(buffer[0])
 
@@ -645,9 +639,7 @@ class MAX734X:
 
         :param Debounce debounce: The debounce configuration object.
         """
-        buffer: bytearray = bytearray(2)
-        buffer[0] = _REG_DEBOUNCE
-        buffer[1] = debounce.to_register()
+        buffer: bytearray = bytearray([_REG_DEBOUNCE, debounce.to_register()])
         with self._i2c_keyboard as i2c:
             i2c.write(buffer)
 
@@ -657,14 +649,10 @@ class MAX734X:
 
         :return MAX734XConfiguration: The configuration object.
         """
-        buffer: bytearray = bytearray(1)
-        buffer[0] = _REG_CONFIGURATION
+        buffer: bytearray = bytearray([_REG_CONFIGURATION])
         with self._i2c_keyboard as i2c:
             i2c.write_then_readinto(
-                in_buffer=buffer,
-                in_end=1,
-                out_buffer=buffer,
-                out_end=1,
+                in_buffer=buffer, in_end=1, out_buffer=buffer, out_end=1
             )
         return Configuration.from_register(buffer[0])
 
@@ -674,10 +662,7 @@ class MAX734X:
 
         :param Configuration configuration: The configuration object.
         """
-        buffer: bytearray = bytearray(2)
-        buffer[0] = _REG_CONFIGURATION
-        buffer[1] = configuration.to_register()
-        print(buffer)
+        buffer: bytearray = bytearray([_REG_CONFIGURATION, configuration.to_register()])
         with self._i2c_keyboard as i2c:
             i2c.write(buffer)
 
@@ -687,14 +672,10 @@ class MAX734X:
 
         :return Interrupt: The interrupt object.
         """
-        buffer: bytearray = bytearray(1)
-        buffer[0] = _REG_INTERRUPT
+        buffer: bytearray = bytearray([_REG_INTERRUPT])
         with self._i2c_keyboard as i2c:
             i2c.write_then_readinto(
-                in_buffer=buffer,
-                in_end=1,
-                out_buffer=buffer,
-                out_end=1,
+                in_buffer=buffer, in_end=1, out_buffer=buffer, out_end=1
             )
         return Interrupt.from_register(buffer[0])
 
@@ -704,9 +685,7 @@ class MAX734X:
 
         :param Interrupt interrupt: The interrupt object.
         """
-        buffer: bytearray = bytearray(2)
-        buffer[0] = _REG_INTERRUPT
-        buffer[1] = interrupt.to_register()
+        buffer: bytearray = bytearray([_REG_INTERRUPT, interrupt.to_register()])
         with self._i2c_keyboard as i2c:
             i2c.write(buffer)
 
@@ -716,14 +695,10 @@ class MAX734X:
 
         :return Sounder: The sounder object.
         """
-        buffer: bytearray = bytearray(1)
-        buffer[0] = _REG_KEY_SOUND
+        buffer: bytearray = bytearray([_REG_KEY_SOUND])
         with self._i2c_keyboard as i2c:
             i2c.write_then_readinto(
-                in_buffer=buffer,
-                in_end=1,
-                out_buffer=buffer,
-                out_end=1,
+                in_buffer=buffer, in_end=1, out_buffer=buffer, out_end=1
             )
         return Sounder.from_register(buffer[0])
 
@@ -733,10 +708,7 @@ class MAX734X:
 
         :param Sounder sounder: The sounder object.
         """
-        buffer: bytearray = bytearray(2)
-        buffer[0] = _REG_KEY_SOUND
-        buffer[1] = sounder.to_register()
-        print(buffer)
+        buffer: bytearray = bytearray([_REG_KEY_SOUND, sounder.to_register()])
         with self._i2c_keyboard as i2c:
             i2c.write(buffer)
 
@@ -746,15 +718,10 @@ class MAX734X:
 
         :return Sounder: The sounder object.
         """
-        buffer: bytearray = bytearray([
-            _REG_ALERT_SOUND,
-        ])
+        buffer: bytearray = bytearray([_REG_ALERT_SOUND])
         with self._i2c_keyboard as i2c:
             i2c.write_then_readinto(
-                in_buffer=buffer,
-                in_end=1,
-                out_buffer=buffer,
-                out_end=1,
+                in_buffer=buffer, in_end=1, out_buffer=buffer, out_end=1
             )
         return Sounder.from_register(buffer[0])
 
@@ -764,10 +731,7 @@ class MAX734X:
 
         :param Sounder sounder: The sounder object.
         """
-        buffer: bytearray = bytearray([
-            _REG_ALERT_SOUND,
-            sounder.to_register(),
-        ])
+        buffer: bytearray = bytearray([_REG_ALERT_SOUND, sounder.to_register()])
         with self._i2c_keyboard as i2c:
             i2c.write(buffer)
 
@@ -777,9 +741,6 @@ class MAX734X:
 
         :param Sounder sounder: The sounder object.
         """
-        buffer: bytearray = bytearray([
-            sounder.to_register(),
-        ])
-        print(buffer)
+        buffer: bytearray = bytearray([sounder.to_register()])
         with self._i2c_sounder as i2c:
             i2c.write(buffer)
