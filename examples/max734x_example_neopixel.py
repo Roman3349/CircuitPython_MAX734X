@@ -11,6 +11,7 @@ import board
 import digitalio
 import neopixel
 import max734x
+from max734x import Sounder
 
 try:
     # This import is only for type checking
@@ -37,8 +38,21 @@ def init_keyboard(
     controller.write_debounce(max734x.Debounce(time_ms=40, outputs=0))
     # Enable key-scan interrupts
     controller.write_interrupt(max734x.Interrupt(assent_on_debounce_cycles=1))
-    # Enable the keyboard controller
-    controller.write_configuration(max734x.Configuration(shutdown=False))
+    # Enable sound on key press
+    controller.write_key_sound(
+        max734x.Sounder(
+            frequency=max734x.SOUNDER_OUTPUT_FREQUENCY_C5,
+            duration=max734x.SOUND_DURATION_250MS,
+        )
+    )
+    # Enable the keyboard controller and sounder
+    controller.write_configuration(
+        max734x.Configuration(
+            key_sound_enabled=True,
+            active_sounder_output=max734x.CONFIGURATION_SOUNDER_SERIAL,
+            shutdown=False,
+        )
+    )
     return controller, int_input
 
 
@@ -75,6 +89,13 @@ def main() -> None:
             keys = kb_controller.read_keys()
             if keys.last and keys.key == 0:
                 break
+        kb_controller.play_sound(
+            Sounder(
+                duration=max734x.SOUND_DURATION_1000MS,
+                frequency=max734x.SOUNDER_OUTPUT_FREQUENCY_B5,
+                buffer=True,
+            )
+        )
         led: Optional[int] = None
         while True:
             if kb_int.value:

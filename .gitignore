@@ -5,6 +5,11 @@
 # IDEs
 .idea/
 
+# CircuitPython build files
+build-circuitpython-*/
+build_deps/
+bundles/
+
 # Virtual environments
 venv/
 .venv/

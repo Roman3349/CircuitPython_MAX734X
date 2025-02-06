@@ -200,41 +200,38 @@ _SOUNDER_DEFAULT = _SOUNDER_DISABLE
 
 # Sounder buffer
 _SOUNDER_BUFFER_MASK = const(0b00000001)
-_SOUNDER_BUFFER_DISABLE = const(0b00000000)
-_SOUNDER_BUFFER_ENABLE = const(0b00000001)
-_SOUNDER_BUFFER_DEFAULT = _SOUNDER_BUFFER_DISABLE
 
-# Sounder frequency
-_SOUNDER_FREQUENCY_MASK = const(0b00011110)
-_SOUNDER_OUTPUT_ACTIVE_LOW = const(0b00000000)
-_SOUNDER_OUTPUT_ACTIVE_HIGH = const(0b00000010)
-_SOUNDER_FREQUENCY_C5 = const(0b00000100)
-_SOUNDER_FREQUENCY_D5 = const(0b00000110)
-_SOUNDER_FREQUENCY_E5 = const(0b00001000)
-_SOUNDER_FREQUENCY_F5 = const(0b00001010)
-_SOUNDER_FREQUENCY_G5 = const(0b00001100)
-_SOUNDER_FREQUENCY_A5 = const(0b00001110)
-_SOUNDER_FREQUENCY_B5 = const(0b00010000)
-_SOUNDER_FREQUENCY_C6 = const(0b00010010)
-_SOUNDER_FREQUENCY_E6 = const(0b00010100)
-_SOUNDER_FREQUENCY_G6 = const(0b00010110)
-_SOUNDER_FREQUENCY_A6 = const(0b00011000)
-_SOUNDER_FREQUENCY_C7 = const(0b00011010)
-_SOUNDER_FREQUENCY_D7 = const(0b00011100)
-_SOUNDER_FREQUENCY_E7 = const(0b00011110)
-_SOUNDER_FREQUENCY_DEFAULT = _SOUNDER_OUTPUT_ACTIVE_LOW
+# Sounder output
+_SOUNDER_OUTPUT_FREQUENCY_MASK = const(0b00011110)
+SOUNDER_OUTPUT_ACTIVE_LOW = const(0b00000000)
+SOUNDER_OUTPUT_ACTIVE_HIGH = const(0b00000010)
+SOUNDER_OUTPUT_FREQUENCY_C5 = const(0b00000100)
+SOUNDER_OUTPUT_FREQUENCY_D5 = const(0b00000110)
+SOUNDER_OUTPUT_FREQUENCY_E5 = const(0b00001000)
+SOUNDER_OUTPUT_FREQUENCY_F5 = const(0b00001010)
+SOUNDER_OUTPUT_FREQUENCY_G5 = const(0b00001100)
+SOUNDER_OUTPUT_FREQUENCY_A5 = const(0b00001110)
+SOUNDER_OUTPUT_FREQUENCY_B5 = const(0b00010000)
+SOUNDER_OUTPUT_FREQUENCY_C6 = const(0b00010010)
+SOUNDER_OUTPUT_FREQUENCY_E6 = const(0b00010100)
+SOUNDER_OUTPUT_FREQUENCY_G6 = const(0b00010110)
+SOUNDER_OUTPUT_FREQUENCY_A6 = const(0b00011000)
+SOUNDER_OUTPUT_FREQUENCY_C7 = const(0b00011010)
+SOUNDER_OUTPUT_FREQUENCY_D7 = const(0b00011100)
+SOUNDER_OUTPUT_FREQUENCY_E7 = const(0b00011110)
+SOUND_OUTPUT_FREQUENCY_DEFAULT = SOUNDER_OUTPUT_ACTIVE_LOW
 
 # Sounder duration
-_SOUNDER_DURATION_MASK = const(0b11100000)
-_SOUNDER_DURATION_CONTINUOUS = const(0b00000000)
-_SOUNDER_DURATION_15625MS = const(0b00100000)
-_SOUNDER_DURATION_3125MS = const(0b01000000)
-_SOUNDER_DURATION_625MS = const(0b01100000)
-_SOUNDER_DURATION_125MS = const(0b10000000)
-_SOUNDER_DURATION_250MS = const(0b10100000)
-_SOUNDER_DURATION_500MS = const(0b11000000)
-_SOUNDER_DURATION_1000MS = const(0b11100000)
-_SOUNDER_DURATION_DEFAULT = _SOUNDER_DURATION_CONTINUOUS
+_SOUND_DURATION_MASK = const(0b11100000)
+SOUND_DURATION_CONTINUOUS = const(0b00000000)
+SOUND_DURATION_15625MS = const(0b00100000)
+SOUND_DURATION_3125MS = const(0b01000000)
+SOUND_DURATION_625MS = const(0b01100000)
+SOUND_DURATION_125MS = const(0b10000000)
+SOUND_DURATION_250MS = const(0b10100000)
+SOUND_DURATION_500MS = const(0b11000000)
+SOUND_DURATION_1000MS = const(0b11100000)
+SOUND_DURATION_DEFAULT = SOUND_DURATION_CONTINUOUS
 
 
 class Configuration:
@@ -505,6 +502,92 @@ class KeysFiFo:
         )
 
 
+class Sounder:
+    """
+    Sounder register.
+    
+    :param bool buffer: Sound buffering.
+    :param int frequency: Sound frequency.
+    :param int duration: Sound duration.
+    """
+
+    def __init__(
+        self,
+        buffer: bool = False,
+        frequency: int = SOUND_OUTPUT_FREQUENCY_DEFAULT,
+        duration: int = SOUND_DURATION_DEFAULT,
+    ) -> None:
+        if frequency < SOUNDER_OUTPUT_ACTIVE_LOW or frequency > SOUNDER_OUTPUT_FREQUENCY_E7:
+            raise ValueError("Output frequency must be between 0 and 14.")
+        if duration < SOUND_DURATION_CONTINUOUS or duration > SOUND_DURATION_1000MS:
+            raise ValueError("Duration must be between 0 and 7.")
+        self.buffer = buffer
+        self.frequency = frequency
+        self.duration = duration
+
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the object.
+        :return: String representation of the object.
+        """
+        frequency_strings: list[str] = [
+            "active low",
+            "active high",
+            "C5",
+            "D5",
+            "E5",
+            "F5",
+            "G5",
+            "A5",
+            "B5",
+            "C6",
+            "E6",
+            "G6",
+            "A6",
+            "C7",
+            "D7",
+            "E7",
+        ]
+        duration_strings: list[str] = [
+            "continuous",
+            "15625 ms",
+            "3125 ms",
+            "625 ms",
+            "125 ms",
+            "250 ms",
+            "500 ms",
+            "1000 ms",
+        ]
+        return (
+            f"<Sounder buffer={self.buffer}"
+            + f" frequency={frequency_strings[self.frequency >> 1]}"
+            + f" duration={duration_strings[self.duration >> 5]}>"
+        )
+
+    @staticmethod
+    def from_register(value: int):
+        """
+        Create a new Sounder object from the register value.
+
+        :param int value: The value of the register.
+        :return: The new Sounder object.
+        """
+        return Sounder(
+            buffer=bool(value & _SOUNDER_BUFFER_MASK),
+            frequency=value & _SOUNDER_OUTPUT_FREQUENCY_MASK,
+            duration=value & _SOUND_DURATION_MASK,
+        )
+
+    def to_register(self) -> int:
+        """
+        Convert the interrupt configuration object to the register value.
+
+        :return: Register interpretation of the interrupt configuration object.
+        """
+        return int(self.buffer) | self.frequency | self.duration
+
+
 class MAX734X:
     """
     CircuitPython driver for the MAX7347/MAX7348/MAX7349 keyboard and sounder
@@ -519,7 +602,8 @@ class MAX734X:
         i2c_bus: I2C,
         address: int = ADDRESS_GND,
     ) -> None:
-        self._i2c = I2CDevice(i2c_bus, address)
+        self._i2c_keyboard = I2CDevice(i2c_bus, address)
+        self._i2c_sounder = I2CDevice(i2c_bus, address + 1)
 
     def read_keys(self) -> KeysFiFo:
         """
@@ -529,7 +613,7 @@ class MAX734X:
         """
         buffer: bytearray = bytearray(1)
         buffer[0] = _REG_KEYS
-        with self._i2c as i2c:
+        with self._i2c_keyboard as i2c:
             i2c.write_then_readinto(
                 in_buffer=buffer,
                 in_end=1,
@@ -546,7 +630,7 @@ class MAX734X:
         """
         buffer: bytearray = bytearray(1)
         buffer[0] = _REG_DEBOUNCE
-        with self._i2c as i2c:
+        with self._i2c_keyboard as i2c:
             i2c.write_then_readinto(
                 in_buffer=buffer,
                 in_end=1,
@@ -564,7 +648,7 @@ class MAX734X:
         buffer: bytearray = bytearray(2)
         buffer[0] = _REG_DEBOUNCE
         buffer[1] = debounce.to_register()
-        with self._i2c as i2c:
+        with self._i2c_keyboard as i2c:
             i2c.write(buffer)
 
     def read_configuration(self) -> Configuration:
@@ -575,7 +659,7 @@ class MAX734X:
         """
         buffer: bytearray = bytearray(1)
         buffer[0] = _REG_CONFIGURATION
-        with self._i2c as i2c:
+        with self._i2c_keyboard as i2c:
             i2c.write_then_readinto(
                 in_buffer=buffer,
                 in_end=1,
@@ -593,7 +677,8 @@ class MAX734X:
         buffer: bytearray = bytearray(2)
         buffer[0] = _REG_CONFIGURATION
         buffer[1] = configuration.to_register()
-        with self._i2c as i2c:
+        print(buffer)
+        with self._i2c_keyboard as i2c:
             i2c.write(buffer)
 
     def read_interrupt(self) -> Interrupt:
@@ -604,7 +689,7 @@ class MAX734X:
         """
         buffer: bytearray = bytearray(1)
         buffer[0] = _REG_INTERRUPT
-        with self._i2c as i2c:
+        with self._i2c_keyboard as i2c:
             i2c.write_then_readinto(
                 in_buffer=buffer,
                 in_end=1,
@@ -622,5 +707,79 @@ class MAX734X:
         buffer: bytearray = bytearray(2)
         buffer[0] = _REG_INTERRUPT
         buffer[1] = interrupt.to_register()
-        with self._i2c as i2c:
+        with self._i2c_keyboard as i2c:
+            i2c.write(buffer)
+
+    def read_key_sound(self) -> Sounder:
+        """
+        Read the key sound register.
+
+        :return Sounder: The sounder object.
+        """
+        buffer: bytearray = bytearray(1)
+        buffer[0] = _REG_KEY_SOUND
+        with self._i2c_keyboard as i2c:
+            i2c.write_then_readinto(
+                in_buffer=buffer,
+                in_end=1,
+                out_buffer=buffer,
+                out_end=1,
+            )
+        return Sounder.from_register(buffer[0])
+
+    def write_key_sound(self, sounder: Sounder) -> None:
+        """
+        Write the key sound register.
+
+        :param Sounder sounder: The sounder object.
+        """
+        buffer: bytearray = bytearray(2)
+        buffer[0] = _REG_KEY_SOUND
+        buffer[1] = sounder.to_register()
+        print(buffer)
+        with self._i2c_keyboard as i2c:
+            i2c.write(buffer)
+
+    def read_alert_sound(self) -> Sounder:
+        """
+        Read the alert sound register.
+
+        :return Sounder: The sounder object.
+        """
+        buffer: bytearray = bytearray([
+            _REG_ALERT_SOUND,
+        ])
+        with self._i2c_keyboard as i2c:
+            i2c.write_then_readinto(
+                in_buffer=buffer,
+                in_end=1,
+                out_buffer=buffer,
+                out_end=1,
+            )
+        return Sounder.from_register(buffer[0])
+
+    def write_alert_sound(self, sounder: Sounder) -> None:
+        """
+        Write the alert sound register.
+
+        :param Sounder sounder: The sounder object.
+        """
+        buffer: bytearray = bytearray([
+            _REG_ALERT_SOUND,
+            sounder.to_register(),
+        ])
+        with self._i2c_keyboard as i2c:
+            i2c.write(buffer)
+
+    def play_sound(self, sounder: Sounder) -> None:
+        """
+        Play the sound.
+
+        :param Sounder sounder: The sounder object.
+        """
+        buffer: bytearray = bytearray([
+            sounder.to_register(),
+        ])
+        print(buffer)
+        with self._i2c_sounder as i2c:
             i2c.write(buffer)
