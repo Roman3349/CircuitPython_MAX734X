@@ -1,5 +1,10 @@
 # CircuitPython MAX7347/MAX7348/MAX7349 Library
 
+[![GitHub branch status](https://img.shields.io/github/checks-status/Roman3349/CircuitPython_MAX734X/master)](https://github.com/Roman3349/CircuitPython_MAX734X/actions?query=branch%3Amaster)
+[![PyPI - Version](https://img.shields.io/pypi/v/circuitpython-max734x)](https://pypi.org/project/circuitpython-max734x/#history)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/circuitpython-max734x)](https://pypi.org/project/circuitpython-max734x/)
+[![PyPI - License](https://img.shields.io/pypi/l/circuitpython-max734x)](./LICENSE)
+
 CircuitPython driver for the MAX7347/MAX7348/MAX7349 keyboard and sounder controllers.
 
 ## Dependencies
@@ -24,11 +29,4 @@ pip3 install circuitpython-max734x
 
 ## Usage Example
 
-```python
-import board
-import max734x
-
-i2c = board.I2C()  # uses board.SCL and board.SDA
-
-kb_controller = max734x.MAX734X(i2c)
-```
+Examples can be found in the [examples](./examples) directory.
