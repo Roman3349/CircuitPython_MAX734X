@@ -16,7 +16,7 @@ readme = "README.md"
 authors = [
     { name = "Roman Ondráček", email = "mail@romanondracek.cz" }
 ]
-urls = {Homepage = "https://github.com/adafruit/Adafruit_CircuitPython_24LC32.git"}
+urls = {Homepage = "https://github.com/Roman3349/CircuitPython_MAX734X"}
 keywords = [
     "blinka",
     "circuitpython",
