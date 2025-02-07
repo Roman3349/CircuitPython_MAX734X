@@ -11,7 +11,6 @@ import board
 import digitalio
 import neopixel
 import max734x
-from max734x import Sounder
 
 try:
     # This import is only for type checking
@@ -90,7 +89,7 @@ def main() -> None:
             if keys.last and keys.key == 0:
                 break
         kb_controller.play_sound(
-            Sounder(
+            max734x.Sounder(
                 duration=max734x.SOUND_DURATION_1000MS,
                 frequency=max734x.SOUNDER_OUTPUT_FREQUENCY_B5,
                 buffer=True,
