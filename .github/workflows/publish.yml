@@ -102,10 +102,10 @@ jobs:
 
       - name: Publish package (to TestPyPI)
         if: github.event_name == 'workflow_dispatch' && github.repository == 'Roman3349/CircuitPython_MAX734X'
-        uses: pypa/gh-action-pypi-publish@v1.13.0
+        uses: pypa/gh-action-pypi-publish@v1.14.3
         with:
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish package (to PyPI)
         if: github.event_name != 'workflow_dispatch' && github.repository == 'Roman3349/CircuitPython_MAX734X'
-        uses: pypa/gh-action-pypi-publish@v1.13.0
+        uses: pypa/gh-action-pypi-publish@v1.14.3
